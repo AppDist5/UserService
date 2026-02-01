@@ -2,24 +2,33 @@ from src.models.doctor import Doctor
 from src.config.database import SessionLocal
 
 class DoctorService:
-    def __init__(self):
-        self.db = SessionLocal()
-    
     def create(self, data):
-        doctor = Doctor(**data)
-        self.db.add(doctor)
-        self.db.commit()
-        self.db.refresh(doctor)
-        return doctor
+        db = SessionLocal()
+        try:
+            doctor = Doctor(**data)
+            db.add(doctor)
+            db.commit()
+            db.refresh(doctor)
+            return doctor
+        except Exception as e:
+            db.rollback()
+            raise e
+        finally:
+            db.close()
     
     def find_all(self, especialidad_id=None):
-        query = self.db.query(Doctor)
-        if especialidad_id:
-            query = query.filter(Doctor.especialidadId == especialidad_id)
-        return query.all()
+        db = SessionLocal()
+        try:
+            query = db.query(Doctor)
+            if especialidad_id:
+                query = query.filter(Doctor.especialidadId == especialidad_id)
+            return query.all()
+        finally:
+            db.close()
     
     def find_by_id(self, doctor_id):
-        return self.db.query(Doctor).filter(Doctor.id == doctor_id).first()
-    
-    def __del__(self):
-        self.db.close()
+        db = SessionLocal()
+        try:
+            return db.query(Doctor).filter(Doctor.id == doctor_id).first()
+        finally:
+            db.close()
